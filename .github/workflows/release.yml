@@ -1,0 +1,37 @@
+name: Create release and upload binaries
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  release:
+    name: Build and release
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Compile x64
+        run: |
+          cargo build --release --target x86_64-pc-windows-msvc
+
+      - name: Compile x86
+        run: |
+          cargo build --release --target i686-pc-windows-msvc
+
+      - name: Create archive
+        shell: pwsh
+        run: |
+          mkdir artifacts
+          Compress-Archive ./target/x86_64-pc-windows-msvc/release/udp-port-analyzer.exe artifacts/udp-port-analyzer-x86_64.zip
+          Compress-Archive ./target/i686-pc-windows-msvc/release/udp-port-analyzer.exe artifacts/udp-port-analyzer-i686.zip
+
+      - name: Release binaries
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: ./artifacts/*
